@@ -60,7 +60,8 @@
      */
 #   include <pj/compat/os_auto.h>
 
-#elif defined(PJ_SYMBIAN) && PJ_SYMBIAN!=0
+#endif
+#if defined(PJ_SYMBIAN) && PJ_SYMBIAN!=0
     /*
      * SymbianOS
      */

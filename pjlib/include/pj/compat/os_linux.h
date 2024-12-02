@@ -24,13 +24,17 @@
  * @brief Describes Linux operating system specifics.
  */
 
+#ifndef PJ_OS_NAME
 #define PJ_OS_NAME                  "linux"
+#endif
 
 #define PJ_HAS_ARPA_INET_H          1
 #define PJ_HAS_ASSERT_H             1
 #define PJ_HAS_CTYPE_H              1
 #define PJ_HAS_ERRNO_H              1
+#ifndef PJ_HAS_LINUX_SOCKET_H
 #define PJ_HAS_LINUX_SOCKET_H       0
+#endif
 #define PJ_HAS_MALLOC_H             1
 #define PJ_HAS_NETDB_H              1
 #define PJ_HAS_NETINET_IN_H         1
