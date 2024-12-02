@@ -18,7 +18,7 @@ export CFLAGS += -Wno-unused-label -g
 #define PJ_HAS_SSL_SOCK		0
 ]]>			
 		</FileWrite>
-		<Configure cmd="make distclean &amp;&amp; ./aconfigure" />
+		<Configure cmd="make distclean &amp;&amp; ./configure" />
 		<Build cmd="make dep &amp;&amp; make clean &amp;&amp; make" />
 		<Test name="pjlib-test" wdir="pjlib/bin" cmd="./pjlib-test-$(SUFFIX)" disabled=$(NOTEST) />
 		<Test name="pjlib-util-test" wdir="pjlib-util/bin" cmd="./pjlib-util-test-$(SUFFIX)" disabled=$(NOTEST) />
