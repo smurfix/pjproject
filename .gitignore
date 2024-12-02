@@ -86,3 +86,7 @@ tests/fuzz/*.o
 cov-int/
 getversion.mak
 configure.out
+/config.guess
+/config.sub
+/configure
+*~
