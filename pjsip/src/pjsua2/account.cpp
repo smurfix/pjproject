@@ -117,6 +117,13 @@ void RtcpFbConfig::writeObject(ContainerNode &node) const PJSUA2_THROW(Error)
 
 ///////////////////////////////////////////////////////////////////////////////
 
+SendRequestParam::SendRequestParam()
+: userData(NULL), method("")
+{
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 void SrtpCrypto::fromPj(const pjmedia_srtp_crypto &prm)
 {
     this->key       = pj2Str(prm.key);
@@ -575,6 +582,7 @@ void AccountConfig::toPj(pjsua_acc_config &ret) const
     // AccountRegConfig
     ret.reg_uri                 = str2Pj(regConfig.registrarUri);
     ret.register_on_acc_add     = regConfig.registerOnAdd;
+    ret.disable_reg_on_modify   = regConfig.disableRegOnModify;
     ret.reg_timeout             = regConfig.timeoutSec;
     ret.reg_retry_interval      = regConfig.retryIntervalSec;
     ret.reg_first_retry_interval= regConfig.firstRetryIntervalSec;
@@ -734,6 +742,7 @@ void AccountConfig::fromPj(const pjsua_acc_config &prm,
     // AccountRegConfig
     regConfig.registrarUri      = pj2Str(prm.reg_uri);
     regConfig.registerOnAdd     = (prm.register_on_acc_add != 0);
+    regConfig.disableRegOnModify= (prm.disable_reg_on_modify != 0);
     regConfig.timeoutSec        = prm.reg_timeout;
     regConfig.retryIntervalSec  = prm.reg_retry_interval;
     regConfig.firstRetryIntervalSec = prm.reg_first_retry_interval;
@@ -990,8 +999,9 @@ void Account::create(const AccountConfig &acc_cfg,
     acc_cfg.toPj(pj_acc_cfg);
 
     for (unsigned i = 0; i < pj_acc_cfg.cred_count; ++i) {
-            pjsip_cred_info *dst = &pj_acc_cfg.cred_info[i];
-            dst->ext.aka.cb = (pjsip_cred_cb)Endpoint::on_auth_create_aka_response_callback;
+        pjsip_cred_info *dst = &pj_acc_cfg.cred_info[i];
+        dst->ext.aka.cb = (pjsip_cred_cb)
+                          &Endpoint::on_auth_create_aka_response_callback;
     }
     pj_acc_cfg.user_data = (void*)this;
     PJSUA2_CHECK_EXPR( pjsua_acc_add(&pj_acc_cfg, make_default, &id) );
@@ -1058,6 +1068,16 @@ AccountInfo Account::getInfo() const PJSUA2_THROW(Error)
     PJSUA2_CHECK_EXPR( pjsua_acc_get_info(id, &pj_ai) );
     ai.fromPj(pj_ai);
     return ai;
+}
+
+void Account::sendRequest(const pj::SendRequestParam& prm) PJSUA2_THROW(Error)
+{
+    pj_str_t method = str2Pj(prm.method);
+    pj_str_t dest_uri = str2Pj(prm.txOption.targetUri);
+    pjsua_msg_data msg_data;
+    prm.txOption.toPj(msg_data);
+
+    PJSUA2_CHECK_EXPR(pjsua_acc_send_request(id, &dest_uri, &method, NULL, prm.userData, &msg_data));
 }
 
 void Account::setRegistration(bool renew) PJSUA2_THROW(Error)

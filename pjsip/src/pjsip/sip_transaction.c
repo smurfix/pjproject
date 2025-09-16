@@ -139,6 +139,7 @@ static int max_retrans_count = -1;
 #define TIMEOUT_TIMER           2
 #define TRANSPORT_ERR_TIMER     3
 #define TRANSPORT_DISC_TIMER    4
+#define TERMINATE_TIMER         5
 
 /* Flags for tsx_set_state() */
 enum
@@ -879,6 +880,7 @@ pjsip_tsx_detect_merged_requests(pjsip_rx_data *rdata)
 {
     pj_str_t key, key2;
     pj_uint32_t hval = 0;
+    pjsip_transaction *tsx = NULL;
     pj_status_t status;
 
     PJ_ASSERT_RETURN(rdata->msg_info.msg->type == PJSIP_REQUEST_MSG, NULL);
@@ -894,12 +896,15 @@ pjsip_tsx_detect_merged_requests(pjsip_rx_data *rdata)
     if (status != PJ_SUCCESS)
         return NULL;
 
+    pj_mutex_lock( mod_tsx_layer.mutex );
+
     /* This request must not match any transaction in our primary hash
      * table.
      */
     if (pj_hash_get_lower(mod_tsx_layer.htable, key.ptr, (unsigned)key.slen,
                           &hval) != NULL)
     {
+        pj_mutex_unlock( mod_tsx_layer.mutex);
         return NULL;
     }
 
@@ -909,14 +914,18 @@ pjsip_tsx_detect_merged_requests(pjsip_rx_data *rdata)
     status = create_tsx_key_2543(rdata->tp_info.pool, &key2, PJSIP_ROLE_UAS,
                                  &rdata->msg_info.cseq->method, rdata,
                                  PJ_FALSE);
-    if (status != PJ_SUCCESS)
+    if (status != PJ_SUCCESS) {
+        pj_mutex_unlock( mod_tsx_layer.mutex);
         return NULL;
+    }
 
     hval = 0;
-    return (pjsip_transaction *) pj_hash_get_lower(mod_tsx_layer.htable2,
-                                                   key2.ptr,
-                                                   (unsigned)key2.slen,
-                                                   &hval);
+    tsx = pj_hash_get_lower(mod_tsx_layer.htable2, key2.ptr,
+                            (unsigned)key2.slen, &hval);
+
+    pj_mutex_unlock( mod_tsx_layer.mutex);
+
+    return tsx;
 }
 
 /* This module callback is called when endpoint has received an
@@ -949,6 +958,18 @@ static pj_bool_t mod_tsx_layer_on_rx_request(pjsip_rx_data *rdata)
          * Reject the request so that endpoint passes the request to
          * upper layer modules.
          */
+        pj_mutex_unlock( mod_tsx_layer.mutex);
+        return PJ_FALSE;
+    }
+
+    /* In the case of an INVITE transaction, if the response was a 2xx,
+     * the ACK is not considered part of the transaction.
+     * Let sip_dialog and sip_inv handle it instead.
+     */
+    if (rdata->msg_info.msg->line.req.method.id == PJSIP_ACK_METHOD &&
+        tsx->method.id == PJSIP_INVITE_METHOD &&
+        tsx->status_code/100 == 2)
+    {
         pj_mutex_unlock( mod_tsx_layer.mutex);
         return PJ_FALSE;
     }
@@ -1253,7 +1274,13 @@ static void tsx_timer_callback( pj_timer_heap_t *theap, pj_timer_entry *entry)
         return;
     }
 
-    if (entry->id == TRANSPORT_ERR_TIMER || entry->id == TRANSPORT_DISC_TIMER)
+
+    if (entry->id == TERMINATE_TIMER) {
+        if (tsx->state < PJSIP_TSX_STATE_TERMINATED) {
+            pjsip_tsx_terminate(tsx, tsx->status_code);
+        }
+    } else if (entry->id == TRANSPORT_ERR_TIMER ||
+               entry->id == TRANSPORT_DISC_TIMER)
     {
         /* Posted transport error/disconnection event */
         pj_bool_t tp_disc = (entry->id == TRANSPORT_DISC_TIMER);
@@ -1582,7 +1609,7 @@ PJ_DEF(pj_status_t) pjsip_tsx_create_uac2(pjsip_module *tsx_user,
     tsx->hashed_key = pj_hash_calc_tolower(0, NULL, &tsx->transaction_key);
 #endif
 
-    PJ_LOG(6, (tsx->obj_name, "tsx_key=%.*s", tsx->transaction_key.slen,
+    PJ_LOG(6, (tsx->obj_name, "tsx_key=%.*s", (int)tsx->transaction_key.slen,
                tsx->transaction_key.ptr));
 
     /* Begin with State_Null.
@@ -1741,7 +1768,7 @@ PJ_DEF(pj_status_t) pjsip_tsx_create_uas2(pjsip_module *tsx_user,
     branch = &rdata->msg_info.via->branch_param;
     pj_strdup(tsx->pool, &tsx->branch, branch);
 
-    PJ_LOG(6, (tsx->obj_name, "tsx_key=%.*s", tsx->transaction_key.slen,
+    PJ_LOG(6, (tsx->obj_name, "tsx_key=%.*s", (int)tsx->transaction_key.slen,
                tsx->transaction_key.ptr));
 
 
@@ -1863,6 +1890,30 @@ PJ_DEF(pj_status_t) pjsip_tsx_terminate( pjsip_transaction *tsx, int code )
     pj_grp_lock_release(tsx->grp_lock);
 
     pj_log_pop_indent();
+
+    return PJ_SUCCESS;
+}
+
+
+/*
+ * Force terminate transaction asynchronously, using the transaction
+ * internal timer.
+ */
+PJ_DEF(pj_status_t) pjsip_tsx_terminate_async(pjsip_transaction *tsx,
+                                              int code )
+{
+    pj_time_val delay = {0, 100};
+
+    PJ_ASSERT_RETURN(tsx != NULL, PJ_EINVAL);
+
+    PJ_LOG(5,(tsx->obj_name, "Request to terminate transaction async"));
+
+    PJ_ASSERT_RETURN(code >= 200, PJ_EINVAL);
+
+    lock_timer(tsx);
+    tsx_cancel_timer(tsx, &tsx->timeout_timer);
+    tsx_schedule_timer(tsx, &tsx->timeout_timer, &delay, TERMINATE_TIMER);
+    unlock_timer(tsx);
 
     return PJ_SUCCESS;
 }
@@ -2057,6 +2108,8 @@ static void send_msg_callback( pjsip_send_state *send_state,
             tsx_update_transport(tsx, send_state->cur_transport);
 
             /* Update remote address. */
+		    pj_assert(tdata->dest_info.cur_addr <
+		              PJ_ARRAY_SIZE(tdata->dest_info.addr.entry));
             tsx->addr_len = tdata->dest_info.addr.entry[tdata->dest_info.cur_addr].addr_len;
             pj_memcpy(&tsx->addr, 
                       &tdata->dest_info.addr.entry[tdata->dest_info.cur_addr].addr,
@@ -2144,11 +2197,16 @@ static void send_msg_callback( pjsip_send_state *send_state,
             else
                 sc = PJSIP_SC_TSX_TRANSPORT_ERROR;
 
-            /* Terminate transaction, if it's not already terminated. */
-            tsx_set_status_code(tsx, sc, &err);
-            if (tsx->state != PJSIP_TSX_STATE_TERMINATED &&
+            /* For UAC tsx, we directly terminate the transaction.
+             * For UAS tsx, we terminate the transaction for 502 error,
+             * and will retry for 503.
+             * See #3805 and #3806.
+             */
+            if ((tsx->role == PJSIP_ROLE_UAC || sc == PJSIP_SC_BAD_GATEWAY) &&
+                tsx->state != PJSIP_TSX_STATE_TERMINATED &&
                 tsx->state != PJSIP_TSX_STATE_DESTROYED)
             {
+                tsx_set_status_code(tsx, sc, &err);
                 /* Set tsx state to TERMINATED, but release the lock
                  * when invoking the callback, to avoid deadlock.
                  */
@@ -2161,9 +2219,17 @@ static void send_msg_callback( pjsip_send_state *send_state,
              */
             else if (tsx->transport_flag & TSX_HAS_PENDING_DESTROY)
             {
+                tsx_set_status_code(tsx, sc, &err);
                 tsx_set_state( tsx, PJSIP_TSX_STATE_DESTROYED, 
                                PJSIP_EVENT_TRANSPORT_ERROR,
                                send_state->tdata, 0);
+            } else if (tsx->role == PJSIP_ROLE_UAS && 
+                       tsx->transport_flag & TSX_HAS_PENDING_RESCHED &&
+                       tsx->state != PJSIP_TSX_STATE_TERMINATED &&
+                       tsx->state != PJSIP_TSX_STATE_DESTROYED) 
+            {
+                tsx->transport_flag &= ~(TSX_HAS_PENDING_RESCHED);
+                tsx_resched_retransmission(tsx);
             }
 
         } else {
@@ -2218,7 +2284,16 @@ static void transport_callback(void *token, pjsip_tx_data *tdata,
     pj_grp_lock_acquire(tsx->grp_lock);
     tsx->transport_flag &= ~(TSX_HAS_PENDING_TRANSPORT);
 
-    if (sent > 0) {
+    if (sent > 0 || tsx->role == PJSIP_ROLE_UAS) {
+        if (sent < 0) {
+            /* For UAS transactions, we just print error log
+             * and continue as per normal.
+             */
+            PJ_PERROR(2,(tsx->obj_name, (pj_status_t)-sent,
+                          "Transport failed to send %s!",
+                          pjsip_tx_data_get_info(tdata)));
+        }
+
         /* Pending destroy? */
         if (tsx->transport_flag & TSX_HAS_PENDING_DESTROY) {
             tsx_set_state( tsx, PJSIP_TSX_STATE_DESTROYED,
@@ -2251,7 +2326,7 @@ static void transport_callback(void *token, pjsip_tx_data *tdata,
     }
     pj_grp_lock_release(tsx->grp_lock);
 
-    if (sent < 0) {
+    if (sent < 0 && tsx->role == PJSIP_ROLE_UAC) {
         pj_time_val delay = {0, 0};
 
         PJ_PERROR(2,(tsx->obj_name, (pj_status_t)-sent,
@@ -2295,6 +2370,8 @@ static void tsx_tp_state_callback( pjsip_transport *tp,
         pj_assert(tp && info && info->user_data);
 
         tsx = (pjsip_transaction*)info->user_data;
+
+        tsx->transport_flag &= ~(TSX_HAS_PENDING_TRANSPORT);
 
         /* Post the event for later processing, to avoid deadlock.
          * See https://github.com/pjsip/pjproject/issues/1646
@@ -2386,8 +2463,11 @@ static pj_status_t tsx_send_msg( pjsip_transaction *tsx,
 
     /* If we have resolved the server, we treat the error as permanent error.
      * Terminate transaction with transport error failure.
+     * Only applicable for UAC transactions.
      */
-    if (tsx->transport_flag & TSX_HAS_RESOLVED_SERVER) {
+    if (tsx->role == PJSIP_ROLE_UAC &&
+        (tsx->transport_flag & TSX_HAS_RESOLVED_SERVER))
+    {
         
         char errmsg[PJ_ERR_MSG_SIZE];
         pj_str_t err;
@@ -2440,6 +2520,12 @@ static pj_status_t tsx_send_msg( pjsip_transaction *tsx,
         if (status == PJ_EPENDING)
             status = PJ_SUCCESS;
         if (status != PJ_SUCCESS) {
+            char errmsg[PJ_ERR_MSG_SIZE];
+            pj_str_t err;
+
+            err = pj_strerror(status, errmsg, sizeof(errmsg));
+            tsx_set_status_code(tsx, PJSIP_SC_TSX_TRANSPORT_ERROR, &err);
+
             tsx->transport_flag &= ~(TSX_HAS_PENDING_TRANSPORT);
             pj_grp_lock_dec_ref(tsx->grp_lock);
             pjsip_tx_data_dec_ref(tdata);
@@ -2614,6 +2700,13 @@ static pj_status_t tsx_retransmit( pjsip_transaction *tsx, int resched)
     status = tsx_send_msg( tsx, tsx->last_tx);
     if (status != PJ_SUCCESS) {
         return status;
+    }
+
+    /* Cancel retransmission timer if transport is pending. */
+    if (resched && (tsx->transport_flag & TSX_HAS_PENDING_TRANSPORT))
+    {
+        tsx_cancel_timer( tsx, &tsx->retransmit_timer );
+        tsx->transport_flag |= TSX_HAS_PENDING_RESCHED;
     }
 
     return PJ_SUCCESS;

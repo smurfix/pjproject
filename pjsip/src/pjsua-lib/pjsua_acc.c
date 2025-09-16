@@ -462,6 +462,12 @@ PJ_DEF(pj_status_t) pjsua_acc_add( const pjsua_acc_config *cfg,
     PJ_ASSERT_RETURN(pjsua_var.acc_cnt < PJ_ARRAY_SIZE(pjsua_var.acc),
                      PJ_ETOOMANY);
 
+#if !PJ_HAS_IPV6
+    PJ_ASSERT_RETURN(cfg->ipv6_sip_use == PJSUA_IPV6_DISABLED, PJ_EINVAL);
+    PJ_ASSERT_RETURN(cfg->ipv6_media_use == PJSUA_IPV6_DISABLED, PJ_EINVAL);
+    PJ_ASSERT_RETURN(cfg->nat64_opt == PJSUA_NAT64_DISABLED, PJ_EINVAL);
+#endif
+
     /* Must have a transport */
     PJ_ASSERT_RETURN(pjsua_var.tpdata[0].data.ptr != NULL, PJ_EINVALIDOP);
 
@@ -703,18 +709,14 @@ PJ_DEF(pj_status_t) pjsua_acc_del(pjsua_acc_id acc_id)
     /* Delete server presence subscription */
     pjsua_pres_delete_acc(acc_id, 0);
 
-    /* Release account pool */
+    /* Release & wipe account pool */
     if (acc->pool) {
-        pj_pool_release(acc->pool);
-        acc->pool = NULL;
+        pj_pool_secure_release(&acc->pool);
     }
 
     /* Invalidate */
-    acc->valid = PJ_FALSE;
-    pj_bzero(&acc->via_addr, sizeof(acc->via_addr));
-    acc->via_tp = NULL;
-    acc->next_rtp_port = 0;
-    acc->ip_change_op = PJSUA_IP_CHANGE_OP_NULL;
+    pj_bzero(acc, sizeof(*acc));
+    acc->index = acc_id;
 
     /* Remove from array */
     for (i=0; i<pjsua_var.acc_cnt; ++i) {
@@ -834,8 +836,7 @@ PJ_DEF(pj_status_t) pjsua_acc_modify( pjsua_acc_id acc_id,
     pjsip_name_addr *id_name_addr = NULL;
     pjsip_sip_uri *id_sip_uri = NULL;
     pjsip_sip_uri *reg_sip_uri = NULL;
-    pj_uint32_t local_route_crc, global_route_crc;
-    pjsip_route_hdr global_route;
+    pj_uint32_t local_route_crc;
     pjsip_route_hdr local_route;
     pj_str_t acc_proxy[PJSUA_ACC_MAX_PROXIES];
     pj_bool_t update_reg = PJ_FALSE;
@@ -845,6 +846,12 @@ PJ_DEF(pj_status_t) pjsua_acc_modify( pjsua_acc_id acc_id,
 
     PJ_ASSERT_RETURN(acc_id>=0 && acc_id<(int)PJ_ARRAY_SIZE(pjsua_var.acc),
                      PJ_EINVAL);
+
+#if !PJ_HAS_IPV6
+    PJ_ASSERT_RETURN(cfg->ipv6_sip_use == PJSUA_IPV6_DISABLED, PJ_EINVAL);
+    PJ_ASSERT_RETURN(cfg->ipv6_media_use == PJSUA_IPV6_DISABLED, PJ_EINVAL);
+    PJ_ASSERT_RETURN(cfg->nat64_opt == PJSUA_NAT64_DISABLED, PJ_EINVAL);
+#endif
 
     PJ_LOG(4,(THIS_FILE, "Modifying account %d", acc_id));
     pj_log_push_indent();
@@ -887,6 +894,7 @@ PJ_DEF(pj_status_t) pjsua_acc_modify( pjsua_acc_id acc_id,
     /* Registrar URI */
     if (pj_strcmp(&acc->cfg.reg_uri, &cfg->reg_uri) && cfg->reg_uri.slen) {
         pjsip_uri *reg_uri;
+        unsigned rcnt;
 
         /* Need to parse reg_uri to get the elements: */
         reg_uri = pjsip_parse_uri(acc->pool, cfg->reg_uri.ptr, 
@@ -907,6 +915,23 @@ PJ_DEF(pj_status_t) pjsua_acc_modify( pjsua_acc_id acc_id,
         }
 
         reg_sip_uri = (pjsip_sip_uri*) pjsip_uri_get_uri(reg_uri);
+
+        /* Clear route headers from the previous registrar. */
+        rcnt = (unsigned)pj_list_size(&acc->route_set);
+        if (rcnt != pjsua_var.ua_cfg.outbound_proxy_cnt + acc->cfg.proxy_cnt) {
+            pjsip_route_hdr *hr;
+            unsigned i;
+
+            for (i=pjsua_var.ua_cfg.outbound_proxy_cnt + acc->cfg.proxy_cnt,
+                 hr=acc->route_set.prev;
+                 i<rcnt;
+                 ++i)
+             {
+                pjsip_route_hdr *prev = hr->prev;
+                pj_list_erase(hr);
+                hr = prev;
+             }
+        }
     }
 
     /* REGISTER header list */
@@ -917,22 +942,6 @@ PJ_DEF(pj_status_t) pjsua_acc_modify( pjsua_acc_id acc_id,
 
     /* SUBSCRIBE header list */
     update_hdr_list(acc->pool, &acc->cfg.sub_hdr_list, &cfg->sub_hdr_list);
-
-    /* Global outbound proxy */
-    global_route_crc = calc_proxy_crc(pjsua_var.ua_cfg.outbound_proxy, 
-                                      pjsua_var.ua_cfg.outbound_proxy_cnt);
-    if (global_route_crc != acc->global_route_crc) {
-        pjsip_route_hdr *r;
-
-        /* Copy from global outbound proxies */
-        pj_list_init(&global_route);
-        r = pjsua_var.outbound_proxy.next;
-        while (r != &pjsua_var.outbound_proxy) {
-            pj_list_push_back(&global_route,
-                              pjsip_hdr_shallow_clone(acc->pool, r));
-            r = r->next;
-        }
-    }
 
     /* Account proxy */
     local_route_crc = calc_proxy_crc(cfg->proxy, cfg->proxy_cnt);
@@ -966,6 +975,33 @@ PJ_DEF(pj_status_t) pjsua_acc_modify( pjsua_acc_id acc_id,
         local_route_crc = calc_proxy_crc(acc_proxy, cfg->proxy_cnt);
     }
 
+    if (local_route_crc != acc->local_route_crc) {
+        unsigned i;
+        pjsip_route_hdr *r = &acc->route_set;
+
+        /* Remove the current account proxies from the route set */
+        for (i = 0; i < pjsua_var.ua_cfg.outbound_proxy_cnt; i++)
+            r = r->next;
+        for (i = 0; i < acc->cfg.proxy_cnt; ++i) {
+            pjsip_route_hdr *r_ = r->next;
+            pj_list_erase(r_);
+        }
+
+        /* Insert new proxy setting to the route set */
+        pj_list_insert_list_after(r, &local_route);
+
+        /* Update the proxy setting */
+        acc->cfg.proxy_cnt = cfg->proxy_cnt;
+        for (i = 0; i < cfg->proxy_cnt; ++i)
+            acc->cfg.proxy[i] = acc_proxy[i];
+
+        /* Update local route CRC */
+        acc->local_route_crc = local_route_crc;
+
+        update_reg = PJ_TRUE;
+        unreg_first = PJ_TRUE;
+    }
+
 
     /* == Apply the new config == */
 
@@ -979,6 +1015,21 @@ PJ_DEF(pj_status_t) pjsua_acc_modify( pjsua_acc_id acc_id,
         acc->is_sips = PJSIP_URI_SCHEME_IS_SIPS(id_name_addr);
         update_reg = PJ_TRUE;
         unreg_first = PJ_TRUE;
+    }
+
+    /* SIP IP version preference */
+    if (acc->cfg.ipv6_sip_use != cfg->ipv6_sip_use) {
+        acc->cfg.ipv6_sip_use = cfg->ipv6_sip_use;
+        update_reg = PJ_TRUE;
+        unreg_first = PJ_TRUE;
+
+        /* Set client registration's transport based on acc's config. */
+        if (acc->regc) {
+            pjsip_tpselector tp_sel;
+
+            pjsua_init_tpselector(acc->index, &tp_sel);
+            pjsip_regc_set_transport(acc->regc, &tp_sel);
+        }
     }
 
     /* User data */
@@ -1156,53 +1207,6 @@ PJ_DEF(pj_status_t) pjsua_acc_modify( pjsua_acc_id acc_id,
     /* Use of proxy */
     if (acc->cfg.reg_use_proxy != cfg->reg_use_proxy) {
         acc->cfg.reg_use_proxy = cfg->reg_use_proxy;
-        update_reg = PJ_TRUE;
-        unreg_first = PJ_TRUE;
-    }
-
-    /* Global outbound proxy */
-    if (global_route_crc != acc->global_route_crc) {
-        unsigned i;
-        pj_size_t rcnt;
-
-        /* Remove the outbound proxies from the route set */
-        rcnt = pj_list_size(&acc->route_set);
-        for (i=0; i < rcnt - acc->cfg.proxy_cnt; ++i) {
-            pjsip_route_hdr *r = acc->route_set.next;
-            pj_list_erase(r);
-        }
-
-        /* Insert the outbound proxies to the beginning of route set */
-        pj_list_merge_first(&acc->route_set, &global_route);
-
-        /* Update global route CRC */
-        acc->global_route_crc = global_route_crc;
-
-        update_reg = PJ_TRUE;
-        unreg_first = PJ_TRUE;
-    }
-
-    /* Account proxy */
-    if (local_route_crc != acc->local_route_crc) {
-        unsigned i;
-
-        /* Remove the current account proxies from the route set */
-        for (i=0; i < acc->cfg.proxy_cnt; ++i) {
-            pjsip_route_hdr *r = acc->route_set.prev;
-            pj_list_erase(r);
-        }
-
-        /* Insert new proxy setting to the route set */
-        pj_list_merge_last(&acc->route_set, &local_route);
-
-        /* Update the proxy setting */
-        acc->cfg.proxy_cnt = cfg->proxy_cnt;
-        for (i = 0; i < cfg->proxy_cnt; ++i)
-            acc->cfg.proxy[i] = acc_proxy[i];
-
-        /* Update local route CRC */
-        acc->local_route_crc = local_route_crc;
-
         update_reg = PJ_TRUE;
         unreg_first = PJ_TRUE;
     }
@@ -1394,8 +1398,10 @@ PJ_DEF(pj_status_t) pjsua_acc_modify( pjsua_acc_id acc_id,
         acc->cfg.rtp_cfg.bound_addr = b_addr;
     }
 
-    acc->cfg.nat64_opt = cfg->nat64_opt;
-    acc->cfg.ipv6_media_use = cfg->ipv6_media_use;
+    acc->cfg.nat64_opt = PJ_HAS_IPV6? cfg->nat64_opt :
+                                      PJSUA_NAT64_DISABLED;
+    acc->cfg.ipv6_media_use = PJ_HAS_IPV6? cfg->ipv6_media_use :
+                                           PJSUA_IPV6_DISABLED;
     acc->cfg.enable_rtcp_mux = cfg->enable_rtcp_mux;
     acc->cfg.lock_codec = cfg->lock_codec;
     acc->cfg.enable_rtcp_xr = cfg->enable_rtcp_xr;
@@ -1444,7 +1450,7 @@ PJ_DEF(pj_status_t) pjsua_acc_modify( pjsua_acc_id acc_id,
     acc->cfg.call_hold_type = cfg->call_hold_type;
 
     /* Unregister first */
-    if (unreg_first) {
+    if (unreg_first && !cfg->disable_reg_on_modify) {
         if (acc->regc) {
             status = pjsua_acc_set_registration(acc->index, PJ_FALSE);
             if (status != PJ_SUCCESS) {
@@ -1464,7 +1470,7 @@ PJ_DEF(pj_status_t) pjsua_acc_modify( pjsua_acc_id acc_id,
     }
 
     /* Update registration */
-    if (update_reg) {
+    if (update_reg && !cfg->disable_reg_on_modify) {
         /* If accounts has registration enabled, start registration */
         if (acc->cfg.reg_uri.slen) {
             status = pjsua_acc_set_registration(acc->index, PJ_TRUE);
@@ -1502,6 +1508,76 @@ on_return:
     PJSUA_UNLOCK();
     pj_log_pop_indent();
     return status;
+}
+
+typedef struct send_request_data
+{
+    pjsua_acc_id acc_id;
+    void *token;
+} send_request_data;
+
+static void on_send_request(void *request_data, pjsip_event *event)
+{
+    send_request_data *data = (send_request_data*) request_data;
+    if (data && pjsua_var.ua_cfg.cb.on_acc_send_request)
+        (pjsua_var.ua_cfg.cb.on_acc_send_request)(data->acc_id, data->token, event);
+}
+
+PJ_DEF(pj_status_t) pjsua_acc_send_request(pjsua_acc_id acc_id,
+                                           const pj_str_t *dest_uri,
+                                           const pj_str_t *method,
+                                           void *options,
+                                           void *token,
+                                           const pjsua_msg_data *msg_data)
+{
+    const pjsip_hdr *cap_hdr = NULL;
+    pjsip_method method_;
+    pj_status_t status;
+    pjsip_tx_data *tdata = NULL;
+    send_request_data *request_data = NULL;
+
+    PJ_ASSERT_RETURN(acc_id>=0, PJ_EINVAL);
+    PJ_ASSERT_RETURN(dest_uri, PJ_EINVAL);
+    PJ_ASSERT_RETURN(method, PJ_EINVAL);
+    PJ_UNUSED_ARG(options);
+    PJ_ASSERT_RETURN(msg_data, PJ_EINVAL);
+
+    PJ_LOG(4,(THIS_FILE, "Account %d sending %.*s request..",
+                          acc_id, (int)method->slen, method->ptr));
+    pj_log_push_indent();
+
+    pjsip_method_init_np(&method_, (pj_str_t*)method);
+    status = pjsua_acc_create_request(acc_id, &method_, &msg_data->target_uri, &tdata);
+    if (status != PJ_SUCCESS) {
+        pjsua_perror(THIS_FILE, "Unable to create request", status);
+        goto on_return;
+    }
+
+    request_data = PJ_POOL_ZALLOC_T(tdata->pool, send_request_data);
+    if (!request_data) {
+        status = PJ_ENOMEM;
+        goto on_return;
+    }
+    request_data->acc_id = acc_id;
+    request_data->token = token;
+
+    pjsua_process_msg_data(tdata, msg_data);
+
+    cap_hdr = pjsip_endpt_get_capability(pjsua_var.endpt, PJSIP_H_ACCEPT, NULL);
+    if (cap_hdr) {
+        pjsip_msg_add_hdr(tdata->msg,
+                          (pjsip_hdr*) pjsip_hdr_clone(tdata->pool, cap_hdr));
+    }
+
+    status = pjsip_endpt_send_request(pjsua_var.endpt, tdata, -1, request_data, &on_send_request);
+    if (status != PJ_SUCCESS) {
+        pjsua_perror(THIS_FILE, "Unable to send request", status);
+        goto on_return;
+    }
+
+on_return:
+   pj_log_pop_indent();
+   return status;
 }
 
 
@@ -1595,7 +1671,8 @@ done:
               acc->cfg.reg_contact_params.slen +
               acc->cfg.reg_contact_uri_params.slen +
               (need_outbound?
-               (acc->rfc5626_instprm.slen + acc->rfc5626_regprm.slen): 0);
+               (acc->rfc5626_instprm.slen + acc->rfc5626_regprm.slen): 0) +
+              5; /* allowance */
         if (len > acc->contact.slen) {
             reg_contact.ptr = (char*) pj_pool_alloc(acc->pool, len);
 
@@ -2002,7 +2079,7 @@ static void update_service_route(pjsua_acc *acc, pjsip_rx_data *rdata)
     pj_size_t rcnt;
 
     /* Find and parse Service-Route headers */
-    for (;;) {
+    for (;(rdata);) {
         char saved;
         int parsed_len;
 
@@ -2053,9 +2130,6 @@ static void update_service_route(pjsua_acc *acc, pjsip_rx_data *rdata)
         if ((void*)hsr == (void*)&rdata->msg_info.msg->hdr)
             break;
     }
-
-    if (uri_cnt == 0)
-        return;
 
     /* 
      * Update account's route set 
@@ -2416,6 +2490,9 @@ static void regc_cb(struct pjsip_regc_cbparam *param)
                    (int)param->reason.slen, param->reason.ptr));
         destroy_regc(acc, PJ_TRUE);
 
+        /* Clear Service-Route header */
+        update_service_route(acc, NULL);
+
         /* Stop keep-alive timer if any. */
         update_keep_alive(acc, PJ_FALSE, NULL);
     } else if (PJSIP_IS_STATUS_IN_CLASS(param->code, 200)) {
@@ -2751,15 +2828,21 @@ static pj_status_t pjsua_regc_init(int acc_id)
 
 pj_bool_t pjsua_sip_acc_is_using_ipv6(pjsua_acc_id acc_id)
 {
+#if PJ_HAS_IPV6
     pjsua_acc *acc = &pjsua_var.acc[acc_id];
 
     return ((acc->tp_type & PJSIP_TRANSPORT_IPV6) == PJSIP_TRANSPORT_IPV6 ||
             pjsua_var.acc[acc_id].cfg.ipv6_sip_use ==
             PJSUA_IPV6_ENABLED_USE_IPV6_ONLY);
+#else
+    PJ_UNUSED_ARG(acc_id);
+    return PJ_FALSE;
+#endif
 }
 
 static int sip_acc_get_pref_ip_ver(pjsua_acc_id acc_id)
 {
+#if PJ_HAS_IPV6
     pjsua_acc *acc = &pjsua_var.acc[acc_id];
 
     if ((acc->tp_type & PJSIP_TRANSPORT_IPV6) == PJSIP_TRANSPORT_IPV6 ||
@@ -2784,6 +2867,10 @@ static int sip_acc_get_pref_ip_ver(pjsua_acc_id acc_id)
          */
         return 0;
     }
+#else
+    PJ_UNUSED_ARG(acc_id);
+    return 4;
+#endif
 }
 
 pj_bool_t pjsua_sip_acc_is_using_stun(pjsua_acc_id acc_id)
@@ -3570,10 +3657,10 @@ pj_status_t pjsua_acc_get_uac_addr(pjsua_acc_id acc_id,
             goto on_return;
         }
 
-        if (ip_addr_ver == 6 || sip_pref_ip == 6) {
+        if (PJ_HAS_IPV6 && (ip_addr_ver == 6 || sip_pref_ip == 6)) {
             /* Get IPv6 address if dest host is IPv6 or we prefer IPv6. */
             af = pj_AF_INET6();
-        } else if (ip_addr_ver == 4 || sip_pref_ip == 4) {
+        } else if (!PJ_HAS_IPV6 || ip_addr_ver == 4 || sip_pref_ip == 4) {
             /* Get IPv4 address if dest host is IPv4 or we prefer IPv4. */
             af = pj_AF_INET();
         } else {
@@ -3593,7 +3680,9 @@ pj_status_t pjsua_acc_get_uac_addr(pjsua_acc_id acc_id,
         /* Get fallback address, only if the host is not IP address and
          * account is not bound to a certain transport.
          */
-        if (ip_addr_ver == 0 && acc->tp_type == PJSIP_TRANSPORT_UNSPECIFIED) {
+        if (PJ_HAS_IPV6 && ip_addr_ver == 0 &&
+            acc->tp_type == PJSIP_TRANSPORT_UNSPECIFIED)
+        {
             unsigned cnt = 1;
 
             /* If first address is IPv4, fallback to IPv6, and vice versa. */
@@ -3889,7 +3978,7 @@ PJ_DEF(pj_status_t) pjsua_acc_create_uas_contact( pj_pool_t *pool,
         pjsua_sip_acc_is_using_ipv6(acc_id) ||
         (rdata->tp_info.transport->key.type & PJSIP_TRANSPORT_IPV6))
     {
-        if (acc->cfg.ipv6_sip_use == PJSUA_IPV6_DISABLED)
+        if (!PJ_HAS_IPV6 || acc->cfg.ipv6_sip_use == PJSUA_IPV6_DISABLED)
             return PJSIP_EUNSUPTRANSPORT;
         tp_type = (pjsip_transport_type_e)
                   (((int)tp_type) | PJSIP_TRANSPORT_IPV6);
@@ -3904,7 +3993,7 @@ PJ_DEF(pj_status_t) pjsua_acc_create_uas_contact( pj_pool_t *pool,
         pjsua_init_tpselector(acc_id, &tp_sel);
     }
 
-    /* Get local address suitable to send request from */
+    /* Get local address suitable to send response from */
     pjsip_tpmgr_fla2_param_default(&tfla2_prm);
     tfla2_prm.tp_type = tp_type;
     tfla2_prm.tp_sel = &tp_sel;
@@ -3921,6 +4010,26 @@ PJ_DEF(pj_status_t) pjsua_acc_create_uas_contact( pj_pool_t *pool,
     local_addr = tfla2_prm.ret_addr;
     local_port = tfla2_prm.ret_port;
 
+    /* For UDP transport, check if we need to overwrite the address
+     * with its configured bound/public address.
+     */
+    if ((flag & PJSIP_TRANSPORT_DATAGRAM) && tfla2_prm.local_if &&
+        tfla2_prm.ret_tp)
+    {
+        int i;
+
+        for (i = 0; i < (int)PJ_ARRAY_SIZE(pjsua_var.tpdata); i++) {
+            if (tfla2_prm.ret_tp==(const void *)pjsua_var.tpdata[i].data.tp) {
+                if (pjsua_var.tpdata[i].has_cfg_addr) {
+                    pj_strdup(pool, &local_addr,
+                              &pjsua_var.tpdata[i].data.tp->local_name.host);
+                    local_port = (pj_uint16_t)
+                              pjsua_var.tpdata[i].data.tp->local_name.port;
+                }
+                break;
+            }
+        }
+    }
 
     /* Enclose IPv6 address in square brackets */
     if (tp_type & PJSIP_TRANSPORT_IPV6) {
@@ -4321,12 +4430,29 @@ pj_status_t pjsua_acc_handle_call_on_ip_change(pjsua_acc *acc)
     {
         for (i = 0; i < pjsua_var.ua_cfg.max_calls; ++i) {
             pjsua_call_info call_info;
+            pjsua_call *call;
+            pjsip_dialog *dlg = NULL;
 
             if (!pjsua_call_is_active(i) ||
                 pjsua_var.calls[i].acc_id != acc->index ||
                 pjsua_call_get_info(i, &call_info) != PJ_SUCCESS)
             {
                 continue;
+            }
+
+            status = acquire_call("call_tpsel_on_ip_change()",
+                                  i, &call, &dlg);
+            if (status == PJ_SUCCESS) {
+                pjsip_tpselector tp_sel;
+
+                /* Set dialog's transport based on acc's config. */
+                pjsua_init_tpselector(call->acc_id, &tp_sel);
+                pjsip_dlg_set_transport(dlg, &tp_sel);
+
+                pjsip_dlg_dec_lock(dlg);
+            } else {
+                PJ_LOG(4, (THIS_FILE, "Failed to update call %d's transport "
+                           "selector", i));
             }
 
             if ((acc->cfg.ip_change_cfg.hangup_calls) &&
@@ -4384,9 +4510,6 @@ pj_status_t pjsua_acc_handle_call_on_ip_change(pjsua_acc *acc)
 
                 /* Check if remote support SIP UPDATE method */
                 if (use_update) {
-                    pjsua_call *call;
-                    pjsip_dialog *dlg = NULL;
-
                     PJ_LOG(5, (THIS_FILE, "Call #%d: IP change is configured "
                                "to using UPDATE", i));
 

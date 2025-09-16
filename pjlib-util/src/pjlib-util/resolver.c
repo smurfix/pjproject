@@ -917,6 +917,12 @@ PJ_DEF(pj_status_t) pj_dns_resolver_start_query( pj_dns_resolver *resolver,
             cache->ref_cnt++;
             pj_grp_lock_release(resolver->grp_lock);
 
+            /* Since we're returning an answer from cache,
+             * there is no query object to return.
+             */
+            if (p_query)
+                *p_query = NULL;
+
             /* This cached response is still valid. Just return this
              * response to caller.
              */
@@ -1840,15 +1846,15 @@ PJ_DEF(pj_status_t) pj_dns_resolver_add_entry( pj_dns_resolver *resolver,
     pj_bzero(&key, sizeof(struct res_key));
     if (pkt->hdr.anscount) {
         /* Make sure name is not too long. */
-        PJ_ASSERT_RETURN(pkt->ans[0].name.slen < PJ_MAX_HOSTNAME, 
-                         PJ_ENAMETOOLONG);
+        PJ_ASSERT_ON_FAIL(pkt->ans[0].name.slen < PJ_MAX_HOSTNAME, 
+                  { pj_grp_lock_release(resolver->grp_lock); return PJ_ENAMETOOLONG; });
 
         init_res_key(&key, pkt->ans[0].type, &pkt->ans[0].name);
 
     } else {
         /* Make sure name is not too long. */
-        PJ_ASSERT_RETURN(pkt->q[0].name.slen < PJ_MAX_HOSTNAME, 
-                         PJ_ENAMETOOLONG);
+        PJ_ASSERT_ON_FAIL(pkt->q[0].name.slen < PJ_MAX_HOSTNAME, 
+                  { pj_grp_lock_release(resolver->grp_lock); return PJ_ENAMETOOLONG; });
 
         init_res_key(&key, pkt->q[0].type, &pkt->q[0].name);
     }
@@ -1942,12 +1948,12 @@ PJ_DEF(void) pj_dns_resolver_dump(pj_dns_resolver *resolver,
         }
     }
     PJ_LOG(3,(resolver->name.ptr, "  Nb. of pending query free nodes: %lu",
-              pj_list_size(&resolver->query_free_nodes)));
+              (unsigned long)pj_list_size(&resolver->query_free_nodes)));
     PJ_LOG(3,(resolver->name.ptr, "  Nb. of timer entries: %lu",
-              pj_timer_heap_count(resolver->timer)));
+              (unsigned long)pj_timer_heap_count(resolver->timer)));
     PJ_LOG(3,(resolver->name.ptr, "  Pool capacity: %lu, used size: %lu",
-              pj_pool_get_capacity(resolver->pool),
-              pj_pool_get_used_size(resolver->pool)));
+              (unsigned long)pj_pool_get_capacity(resolver->pool),
+              (unsigned long)pj_pool_get_used_size(resolver->pool)));
 
     pj_grp_lock_release(resolver->grp_lock);
 #endif
