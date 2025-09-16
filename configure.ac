@@ -2172,7 +2172,11 @@ AC_ARG_ENABLE(ssl,
         if test "x$with_ssl" != "xno" -a "x$with_ssl" != "x"; then
             CFLAGS="$CFLAGS -I$with_ssl/include"
             CPPFLAGS="$CPPFLAGS -I$with_ssl/include"
-            LDFLAGS="$LDFLAGS -L$with_ssl/lib"
+            if test -d $with_ssl/lib; then
+                LDFLAGS="$LDFLAGS -L$with_ssl/lib"
+            else
+                LDFLAGS="$LDFLAGS -L$with_ssl"
+            fi
             AC_MSG_RESULT([Using SSL prefix... $with_ssl])
         fi
 
