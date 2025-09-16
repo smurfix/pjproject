@@ -2973,9 +2973,9 @@ dnl
 
 case $target in
     *linux* | *darwin* | *bsd*)
-        AC_CHECK_HEADER(pthread_np.h,[AC_DEFINE(PJ_HAS_PTHREAD_NP_H,1)],[XXX])
-        AC_CHECK_FUNC(pthread_setname_np,[AC_DEFINE(PJ_HAS_PTHREAD_SETNAME_NP,1)],[XXX])
-        AC_CHECK_FUNC(pthread_set_name_np,[AC_DEFINE(PJ_HAS_PTHREAD_SET_NAME_NP,1)],[XXX])
+        AC_CHECK_HEADER(pthread_np.h,[AC_DEFINE(PJ_HAS_PTHREAD_NP_H,1,[XXX])])
+        AC_CHECK_FUNC(pthread_setname_np,[AC_DEFINE(PJ_HAS_PTHREAD_SETNAME_NP,1,[XXX])])
+        AC_CHECK_FUNC(pthread_set_name_np,[AC_DEFINE(PJ_HAS_PTHREAD_SET_NAME_NP,1,[XXX])])
     ;;
 esac
 
