@@ -137,7 +137,7 @@ AC_ARG_ENABLE(libuuid,
 AC_SEARCH_LIBS(gethostbyname,nsl)
 
 AC_MSG_RESULT([Setting PJ_M_NAME to $target_cpu])
-AC_DEFINE_UNQUOTED(PJ_M_NAME,["$target_cpu"])
+AC_DEFINE_UNQUOTED([PJ_M_NAME], ["$target_cpu"], [XXX])
 
 dnl
 dnl Memory alignment detection
@@ -145,11 +145,11 @@ dnl
 AC_MSG_CHECKING([memory alignment])
 case $target in
     sparc64-* | ia64-* | x86_64-* | arm64-* | aarch64-* | mips64* )
-        AC_DEFINE(PJ_POOL_ALIGNMENT, 8)
+        AC_DEFINE([PJ_POOL_ALIGNMENT], 8, [XXX])
         AC_MSG_RESULT([8 bytes])
     ;;
     * )
-        AC_DEFINE(PJ_POOL_ALIGNMENT, 4)
+        AC_DEFINE([PJ_POOL_ALIGNMENT], 4, [XXX])
         AC_MSG_RESULT([4 bytes (default)])
     ;;
 esac
@@ -175,35 +175,35 @@ AC_SUBST(ac_target_arch)
 AC_SUBST(ac_std_cpp_lib)
 case $target in
     *android*)
-        AC_DEFINE(PJ_ANDROID,1)
+        AC_DEFINE([PJ_ANDROID], 1, [XXX])
         ac_target_arch=$TARGET_ABI
         ac_std_cpp_lib=$STD_CPP_LIB
     ;;
     *mingw* | *cygw* | *win32* | *w32* )
-        AC_DEFINE(PJ_WIN32,1)
-        AC_DEFINE(PJ_WIN32_WINNT,0x0501)
-        AC_DEFINE(WIN32_LEAN_AND_MEAN)
+        AC_DEFINE([PJ_WIN32], 1, [XXX])
+        AC_DEFINE([PJ_WIN32_WINNT], 0x0501, [XXX])
+        AC_DEFINE([WIN32_LEAN_AND_MEAN], 1, [XXX])
         case $target in
             *_64-w64-mingw* )
-            AC_DEFINE(PJ_WIN64,1)
+            AC_DEFINE([PJ_WIN64], 1, [XXX])
         ;;
         esac
     ;;
     *darwin*)
-        AC_DEFINE(PJ_DARWINOS,1)
+        AC_DEFINE([PJ_DARWINOS], 1, [XXX])
         ac_target_arch=$ARCH_VAL
     ;;
     *linux*)
-        AC_DEFINE(PJ_LINUX,1)
+        AC_DEFINE([PJ_LINUX], 1, [XXX])
     ;;
     *bsd*)
-        AC_DEFINE(PJ_BSD,1)
+        AC_DEFINE([PJ_BSD], 1, [XXX])
     ;;
     *rtems*)
-        AC_DEFINE(PJ_RTEMS,1)
+        AC_DEFINE([PJ_RTEMS], 1, [XXX])
     ;;
     *sunos* | *solaris* )
-        AC_DEFINE(PJ_SUNOS,1)
+        AC_DEFINE([PJ_SUNOS], 1, [XXX])
     ;;
     *)
     ;;
@@ -214,38 +214,38 @@ AC_ARG_ENABLE(floating-point,
     AS_HELP_STRING([--disable-floating-point], [Disable floating point where possible]),
     [
         if test "$enable_floating_point" = "no"; then
-            AC_DEFINE(PJ_HAS_FLOATING_POINT,0)
+            AC_DEFINE([PJ_HAS_FLOATING_POINT], 0, [XXX])
             AC_MSG_RESULT([Checking if floating point is disabled... yes])
         fi
     ],
     [
-        AC_DEFINE(PJ_HAS_FLOATING_POINT,1)
+        AC_DEFINE([PJ_HAS_FLOATING_POINT], 1, [XXX])
         AC_MSG_RESULT([Checking if floating point is disabled... no])
     ]
 )
 
 
-AC_CHECK_HEADER(arpa/inet.h,[AC_DEFINE(PJ_HAS_ARPA_INET_H,1)])
-AC_CHECK_HEADER(assert.h,[AC_DEFINE(PJ_HAS_ASSERT_H,1)])
-AC_CHECK_HEADER(ctype.h,[AC_DEFINE(PJ_HAS_CTYPE_H,1)])
+AC_CHECK_HEADER(arpa/inet.h,[AC_DEFINE([PJ_HAS_ARPA_INET_H], 1, [XXX])])
+AC_CHECK_HEADER(assert.h,[AC_DEFINE([PJ_HAS_ASSERT_H], 1, [XXX])])
+AC_CHECK_HEADER(ctype.h,[AC_DEFINE([PJ_HAS_CTYPE_H], 1, [XXX])])
 
 case $target in
     *mingw* | *cygw* | *win32* | *w32* )
-        AC_DEFINE(PJ_HAS_ERRNO_H,0)
+        AC_DEFINE([PJ_HAS_ERRNO_H], 0, [XXX])
     ;;
     *)
-        AC_CHECK_HEADER(errno.h,[AC_DEFINE(PJ_HAS_ERRNO_H,1)])
+        AC_CHECK_HEADER(errno.h,[AC_DEFINE([PJ_HAS_ERRNO_H], 1, [XXX])])
     ;;
 esac
 
-AC_CHECK_HEADER(fcntl.h,[AC_DEFINE(PJ_HAS_FCNTL_H,1)])
-AC_CHECK_HEADER(linux/socket.h,[AC_DEFINE(PJ_HAS_LINUX_SOCKET_H,1)])
-AC_CHECK_HEADER(limits.h,[AC_DEFINE(PJ_HAS_LIMITS_H,1)])
-AC_CHECK_HEADER(malloc.h,[AC_DEFINE(PJ_HAS_MALLOC_H,1)])
-AC_CHECK_HEADER(netdb.h,[AC_DEFINE(PJ_HAS_NETDB_H,1)])
-AC_CHECK_HEADER(netinet/in_systm.h,[AC_DEFINE(PJ_HAS_NETINET_IN_SYSTM_H,1)])
-AC_CHECK_HEADER(netinet/in.h,[AC_DEFINE(PJ_HAS_NETINET_IN_H,1)])
-AC_CHECK_HEADER(netinet/ip.h,[AC_DEFINE(PJ_HAS_NETINET_IP_H,1)],[],
+AC_CHECK_HEADER(fcntl.h,[AC_DEFINE([PJ_HAS_FCNTL_H], 1, [XXX])])
+AC_CHECK_HEADER(linux/socket.h,[AC_DEFINE([PJ_HAS_LINUX_SOCKET_H], 1, [XXX])])
+AC_CHECK_HEADER(limits.h,[AC_DEFINE([PJ_HAS_LIMITS_H], 1, [XXX])])
+AC_CHECK_HEADER(malloc.h,[AC_DEFINE([PJ_HAS_MALLOC_H], 1, [XXX])])
+AC_CHECK_HEADER(netdb.h,[AC_DEFINE([PJ_HAS_NETDB_H], 1, [XXX])])
+AC_CHECK_HEADER(netinet/in_systm.h,[AC_DEFINE([PJ_HAS_NETINET_IN_SYSTM_H], 1, [XXX])])
+AC_CHECK_HEADER(netinet/in.h,[AC_DEFINE([PJ_HAS_NETINET_IN_H], 1, [XXX])])
+AC_CHECK_HEADER(netinet/ip.h,[AC_DEFINE([PJ_HAS_NETINET_IP_H], 1, [XXX])],[],
     [
         #if PJ_HAS_SYS_TYPES_H
         #	include <sys/types.h>
@@ -259,32 +259,32 @@ AC_CHECK_HEADER(netinet/ip.h,[AC_DEFINE(PJ_HAS_NETINET_IP_H,1)],[],
     ]
 )
 
-AC_CHECK_HEADER(netinet/tcp.h,[AC_DEFINE(PJ_HAS_NETINET_TCP_H,1)])
-AC_CHECK_HEADER(ifaddrs.h, [AC_CHECK_FUNC(getifaddrs,[AC_DEFINE(PJ_HAS_IFADDRS_H,1)])])
-AC_CHECK_HEADER(semaphore.h,[AC_DEFINE(PJ_HAS_SEMAPHORE_H,1)])
-AC_CHECK_HEADER(setjmp.h,[AC_DEFINE(PJ_HAS_SETJMP_H,1)])
-AC_CHECK_HEADER(stdarg.h,[AC_DEFINE(PJ_HAS_STDARG_H,1)])
-AC_CHECK_HEADER(stddef.h,[AC_DEFINE(PJ_HAS_STDDEF_H,1)])
-AC_CHECK_HEADER(stdio.h,[AC_DEFINE(PJ_HAS_STDIO_H,1)])
-AC_CHECK_HEADER(stdint.h,[AC_DEFINE(PJ_HAS_STDINT_H,1)])
-AC_CHECK_HEADER(stdlib.h,[AC_DEFINE(PJ_HAS_STDLIB_H,1)])
-AC_CHECK_HEADER(string.h,[AC_DEFINE(PJ_HAS_STRING_H,1)])
-AC_CHECK_HEADER(inttypes.h,[AC_DEFINE(PJ_HAS_INTTYPES_H,1)])
-AC_CHECK_HEADER(sys/ioctl.h,[AC_DEFINE(PJ_HAS_SYS_IOCTL_H,1)])
-AC_CHECK_HEADER(sys/select.h,[AC_DEFINE(PJ_HAS_SYS_SELECT_H,1)])
-AC_CHECK_HEADER(sys/socket.h,[AC_DEFINE(PJ_HAS_SYS_SOCKET_H,1)])
-AC_CHECK_HEADER(sys/time.h,[AC_DEFINE(PJ_HAS_SYS_TIME_H,1)])
-AC_CHECK_HEADER(sys/timeb.h,[AC_DEFINE(PJ_HAS_SYS_TIMEB_H,1)])
-AC_CHECK_HEADER(sys/types.h,[AC_DEFINE(PJ_HAS_SYS_TYPES_H,1)])
-AC_CHECK_HEADER(sys/filio.h,[AC_DEFINE(PJ_HAS_SYS_FILIO_H,1)])
-AC_CHECK_HEADER(sys/sockio.h,[AC_DEFINE(PJ_HAS_SYS_SOCKIO_H,1)])
-AC_CHECK_HEADER(sys/utsname.h,[AC_DEFINE(PJ_HAS_SYS_UTSNAME_H,1)])
-AC_CHECK_HEADER(time.h,[AC_DEFINE(PJ_HAS_TIME_H,1)])
-AC_CHECK_HEADER(unistd.h,[AC_DEFINE(PJ_HAS_UNISTD_H,1)])
-AC_CHECK_HEADER(execinfo.h,[AC_DEFINE(PJ_HAS_EXECINFO_H,1)])
-AC_CHECK_HEADER(winsock.h,[AC_DEFINE(PJ_HAS_WINSOCK_H,1)])
-AC_CHECK_HEADER(winsock2.h,[AC_DEFINE(PJ_HAS_WINSOCK2_H,1)])
-AC_CHECK_HEADER(mswsock.h,[AC_DEFINE(PJ_HAS_MSWSOCK_H,1)],[],
+AC_CHECK_HEADER(netinet/tcp.h,[AC_DEFINE([PJ_HAS_NETINET_TCP_H], 1, [XXX])])
+AC_CHECK_HEADER(ifaddrs.h, [AC_CHECK_FUNC(getifaddrs,[AC_DEFINE([PJ_HAS_IFADDRS_H], 1, [XXX])])])
+AC_CHECK_HEADER(semaphore.h,[AC_DEFINE([PJ_HAS_SEMAPHORE_H], 1, [XXX])])
+AC_CHECK_HEADER(setjmp.h,[AC_DEFINE([PJ_HAS_SETJMP_H], 1, [XXX])])
+AC_CHECK_HEADER(stdarg.h,[AC_DEFINE([PJ_HAS_STDARG_H], 1, [XXX])])
+AC_CHECK_HEADER(stddef.h,[AC_DEFINE([PJ_HAS_STDDEF_H], 1, [XXX])])
+AC_CHECK_HEADER(stdio.h,[AC_DEFINE([PJ_HAS_STDIO_H], 1, [XXX])])
+AC_CHECK_HEADER(stdint.h,[AC_DEFINE([PJ_HAS_STDINT_H], 1, [XXX])])
+AC_CHECK_HEADER(stdlib.h,[AC_DEFINE([PJ_HAS_STDLIB_H], 1, [XXX])])
+AC_CHECK_HEADER(string.h,[AC_DEFINE([PJ_HAS_STRING_H], 1, [XXX])])
+AC_CHECK_HEADER(inttypes.h,[AC_DEFINE([PJ_HAS_INTTYPES_H], 1, [XXX])])
+AC_CHECK_HEADER(sys/ioctl.h,[AC_DEFINE([PJ_HAS_SYS_IOCTL_H], 1, [XXX])])
+AC_CHECK_HEADER(sys/select.h,[AC_DEFINE([PJ_HAS_SYS_SELECT_H], 1, [XXX])])
+AC_CHECK_HEADER(sys/socket.h,[AC_DEFINE([PJ_HAS_SYS_SOCKET_H], 1, [XXX])])
+AC_CHECK_HEADER(sys/time.h,[AC_DEFINE([PJ_HAS_SYS_TIME_H], 1, [XXX])])
+AC_CHECK_HEADER(sys/timeb.h,[AC_DEFINE([PJ_HAS_SYS_TIMEB_H], 1, [XXX])])
+AC_CHECK_HEADER(sys/types.h,[AC_DEFINE([PJ_HAS_SYS_TYPES_H], 1, [XXX])])
+AC_CHECK_HEADER(sys/filio.h,[AC_DEFINE([PJ_HAS_SYS_FILIO_H], 1, [XXX])])
+AC_CHECK_HEADER(sys/sockio.h,[AC_DEFINE([PJ_HAS_SYS_SOCKIO_H], 1, [XXX])])
+AC_CHECK_HEADER(sys/utsname.h,[AC_DEFINE([PJ_HAS_SYS_UTSNAME_H], 1, [XXX])])
+AC_CHECK_HEADER(time.h,[AC_DEFINE([PJ_HAS_TIME_H], 1, [XXX])])
+AC_CHECK_HEADER(unistd.h,[AC_DEFINE([PJ_HAS_UNISTD_H], 1, [XXX])])
+AC_CHECK_HEADER(execinfo.h,[AC_DEFINE([PJ_HAS_EXECINFO_H], 1, [XXX])])
+AC_CHECK_HEADER(winsock.h,[AC_DEFINE([PJ_HAS_WINSOCK_H], 1, [XXX])])
+AC_CHECK_HEADER(winsock2.h,[AC_DEFINE([PJ_HAS_WINSOCK2_H], 1, [XXX])])
+AC_CHECK_HEADER(mswsock.h,[AC_DEFINE([PJ_HAS_MSWSOCK_H], 1, [XXX])],[],
     [
         #if PJ_HAS_WINSOCK2_H
         #	include <winsock2.h>
@@ -294,9 +294,9 @@ AC_CHECK_HEADER(mswsock.h,[AC_DEFINE(PJ_HAS_MSWSOCK_H,1)],[],
     ]
 )
 
-AC_CHECK_HEADER(ws2tcpip.h,[AC_DEFINE(PJ_HAS_WS2TCPIP_H,1)])
+AC_CHECK_HEADER(ws2tcpip.h,[AC_DEFINE([PJ_HAS_WS2TCPIP_H], 1, [XXX])])
 AC_CHECK_HEADER(uuid/uuid.h,[ac_has_uuid_h=1])
-AC_CHECK_HEADER(net/if.h,[AC_DEFINE(PJ_HAS_NET_IF_H,1)],[],
+AC_CHECK_HEADER(net/if.h,[AC_DEFINE([PJ_HAS_NET_IF_H], 1, [XXX])],[],
     [
         #if PJ_HAS_SYS_TYPES_H
         #	include <sys/types.h>
@@ -309,29 +309,29 @@ AC_CHECK_HEADER(net/if.h,[AC_DEFINE(PJ_HAS_NET_IF_H,1)],[],
 
 case $target in
     *android*)
-        AC_CHECK_HEADER(linux/android_alarm.h,[AC_DEFINE(PJ_HAS_ANDROID_ALARM_H,1)])
+        AC_CHECK_HEADER(linux/android_alarm.h,[AC_DEFINE([PJ_HAS_ANDROID_ALARM_H], 1, [XXX])])
     ;;
 esac
 
-AC_CHECK_FUNC(localtime_r,[AC_DEFINE(PJ_HAS_LOCALTIME_R,1)])
+AC_CHECK_FUNC(localtime_r,[AC_DEFINE([PJ_HAS_LOCALTIME_R], 1, [XXX])])
 
 AC_MSG_RESULT([Setting PJ_OS_NAME to $target])
-AC_DEFINE_UNQUOTED(PJ_OS_NAME,["$target"])
+AC_DEFINE_UNQUOTED([PJ_OS_NAME], ["$target"], [XXX])
 
 AC_MSG_RESULT([Setting PJ_HAS_ERRNO_VAR to 1])
-AC_DEFINE(PJ_HAS_ERRNO_VAR,1)
+AC_DEFINE([PJ_HAS_ERRNO_VAR], 1, [XXX])
 
 AC_MSG_RESULT([Setting PJ_HAS_HIGH_RES_TIMER to 1])
-AC_DEFINE(PJ_HAS_HIGH_RES_TIMER,1)
+AC_DEFINE([PJ_HAS_HIGH_RES_TIMER], 1, [XXX])
 
 AC_MSG_RESULT([Setting PJ_HAS_MALLOC to 1])
-AC_DEFINE(PJ_HAS_MALLOC,1)
+AC_DEFINE([PJ_HAS_MALLOC], 1, [XXX])
 
 AC_MSG_RESULT([Setting PJ_NATIVE_STRING_IS_UNICODE to 0])
-AC_DEFINE(PJ_NATIVE_STRING_IS_UNICODE,0)
+AC_DEFINE([PJ_NATIVE_STRING_IS_UNICODE], 0, [XXX])
 
 AC_MSG_RESULT([Setting PJ_ATOMIC_VALUE_TYPE to long])
-AC_DEFINE(PJ_ATOMIC_VALUE_TYPE,long)
+AC_DEFINE([PJ_ATOMIC_VALUE_TYPE], long, [XXX])
 
 dnl # Determine if inet_aton() is available
 AC_MSG_CHECKING([if inet_aton() is available])
@@ -344,7 +344,7 @@ AC_COMPILE_IFELSE(
             [inet_aton(0, 0);])
     ],
     [
-        AC_DEFINE(PJ_SOCK_HAS_INET_ATON,1)
+        AC_DEFINE([PJ_SOCK_HAS_INET_ATON], 1, [XXX])
         AC_MSG_RESULT(yes)
     ],
     [AC_MSG_RESULT(no)]
@@ -361,7 +361,7 @@ AC_COMPILE_IFELSE(
             [inet_pton(0, 0, 0);])
     ],
     [
-        AC_DEFINE(PJ_SOCK_HAS_INET_PTON,1)
+        AC_DEFINE([PJ_SOCK_HAS_INET_PTON], 1, [XXX])
         AC_MSG_RESULT(yes)
     ],
     [AC_MSG_RESULT(no)]
@@ -378,7 +378,7 @@ AC_COMPILE_IFELSE(
             [inet_ntop(0, 0, 0, 0);])
     ],
     [
-        AC_DEFINE(PJ_SOCK_HAS_INET_NTOP,1)
+        AC_DEFINE([PJ_SOCK_HAS_INET_NTOP], 1, [XXX])
         AC_MSG_RESULT(yes)
     ],
     [AC_MSG_RESULT(no)]
@@ -395,7 +395,7 @@ AC_COMPILE_IFELSE(
             [getaddrinfo(0, 0, 0, 0);])
     ],
     [
-        AC_DEFINE(PJ_SOCK_HAS_GETADDRINFO,1)
+        AC_DEFINE([PJ_SOCK_HAS_GETADDRINFO], 1, [XXX])
         AC_MSG_RESULT(yes)
     ],
     [AC_MSG_RESULT(no)]
@@ -411,7 +411,7 @@ AC_COMPILE_IFELSE(
             [socketpair(0, 0, 0, 0);])
     ],
     [
-        AC_DEFINE(PJ_SOCK_HAS_SOCKETPAIR,1)
+        AC_DEFINE([PJ_SOCK_HAS_SOCKETPAIR], 1, [XXX])
         AC_MSG_RESULT(yes)
     ],
     [AC_MSG_RESULT(no)]
@@ -429,7 +429,7 @@ AC_COMPILE_IFELSE(
             [struct sockaddr_in a; a.sin_len=0;])
     ],
     [
-        AC_DEFINE(PJ_SOCKADDR_HAS_LEN,1)
+        AC_DEFINE([PJ_SOCKADDR_HAS_LEN], 1, [XXX])
         AC_MSG_RESULT(yes)
     ],
     [AC_MSG_RESULT(no)]
@@ -445,7 +445,7 @@ AC_COMPILE_IFELSE(
             [socklen_t xxx = 0;])
     ],
     [
-        AC_DEFINE(PJ_HAS_SOCKLEN_T,1)
+        AC_DEFINE([PJ_HAS_SOCKLEN_T], 1, [XXX])
            AC_MSG_RESULT(yes)
     ],
     [AC_MSG_RESULT(no)]
@@ -461,7 +461,7 @@ AC_COMPILE_IFELSE(
             [int opt = IPV6_V6ONLY;])
     ],
     [
-        AC_DEFINE(PJ_SOCK_HAS_IPV6_V6ONLY,1)
+        AC_DEFINE([PJ_SOCK_HAS_IPV6_V6ONLY], 1, [XXX])
         AC_MSG_RESULT(yes)
     ],
     [AC_MSG_RESULT(no)]
@@ -471,7 +471,7 @@ dnl # Determine if SO_ERROR is available
 AC_MSG_CHECKING([if SO_ERROR is available])
 case $target in
     *mingw* | *cygw* | *win32* | *w32* )
-        AC_DEFINE(PJ_HAS_SO_ERROR,1)
+        AC_DEFINE([PJ_HAS_SO_ERROR], 1, [XXX])
         AC_MSG_RESULT(yes)
     ;;
     *)
@@ -485,7 +485,7 @@ case $target in
                     [int i=SO_ERROR;])
             ],
             [
-                AC_DEFINE(PJ_HAS_SO_ERROR,1)
+                AC_DEFINE([PJ_HAS_SO_ERROR], 1, [XXX])
                 AC_MSG_RESULT(yes)
             ],
             [AC_MSG_RESULT(no)]
@@ -501,12 +501,12 @@ AC_COMPILE_IFELSE(
         AC_LANG_PROGRAM([#include <pthread.h>],[pthread_rwlock_t *x;])
     ],
     [
-        AC_DEFINE(PJ_EMULATE_RWMUTEX,0)
+        AC_DEFINE([PJ_EMULATE_RWMUTEX], 0, [XXX])
         ac_rwmutex="yes"
         AC_MSG_RESULT(yes)
     ],
     [
-        AC_DEFINE(PJ_EMULATE_RWMUTEX,1)
+        AC_DEFINE([PJ_EMULATE_RWMUTEX], 1, [XXX])
         ac_rwmutex="no"
         AC_MSG_RESULT(no)
     ]
@@ -524,12 +524,12 @@ if test "$ac_rwmutex" = "no"; then
                 [pthread_rwlock_t *x;])
         ],
         [
-            AC_DEFINE(PJ_EMULATE_RWMUTEX,0)
+            AC_DEFINE([PJ_EMULATE_RWMUTEX], 0, [XXX])
             CFLAGS="$CFLAGS -D_POSIX_THREADS -D_POSIX_READER_WRITER_LOCKS"
             AC_MSG_RESULT(yes)
         ],
         [
-            AC_DEFINE(PJ_EMULATE_RWMUTEX,1)
+            AC_DEFINE([PJ_EMULATE_RWMUTEX], 1, [XXX])
             AC_MSG_RESULT(no)
         ]
     )
@@ -544,7 +544,7 @@ AC_COMPILE_IFELSE(
             [pthread_mutexattr_settype(0,PTHREAD_MUTEX_FAST_NP);])
     ],
     [
-        AC_DEFINE(PJ_HAS_PTHREAD_MUTEXATTR_SETTYPE,1)
+        AC_DEFINE([PJ_HAS_PTHREAD_MUTEXATTR_SETTYPE], 1, [XXX])
         AC_MSG_RESULT(yes)
     ],
     [AC_MSG_RESULT(no)]
@@ -559,7 +559,7 @@ AC_COMPILE_IFELSE(
             [pthread_mutexattr_t attr; attr.recursive=1;])
     ],
     [
-        AC_DEFINE(PJ_PTHREAD_MUTEXATTR_T_HAS_RECURSIVE,1)
+        AC_DEFINE([PJ_PTHREAD_MUTEXATTR_T_HAS_RECURSIVE], 1, [XXX])
         AC_MSG_RESULT(yes)
     ],
     [AC_MSG_RESULT(no)]
@@ -578,15 +578,15 @@ case $target in
             [
                 if test "$enable_kqueue" = "yes"; then
                     AC_MSG_RESULT([kqueue()])
-                    AC_DEFINE(PJ_IOQUEUE_IMP, PJ_IOQUEUE_IMP_KQUEUE)
+                    AC_DEFINE([PJ_IOQUEUE_IMP], PJ_IOQUEUE_IMP_KQUEUE, [XXX])
                 else
                     AC_MSG_RESULT([select()])
-                    AC_DEFINE(PJ_IOQUEUE_IMP, PJ_IOQUEUE_IMP_SELECT)
+                    AC_DEFINE([PJ_IOQUEUE_IMP], PJ_IOQUEUE_IMP_SELECT, [XXX])
                 fi
             ],
             [
                 AC_MSG_RESULT([select()])
-                AC_DEFINE(PJ_IOQUEUE_IMP, PJ_IOQUEUE_IMP_SELECT)
+                AC_DEFINE([PJ_IOQUEUE_IMP], PJ_IOQUEUE_IMP_SELECT, [XXX])
             ]
         )
         ;;
@@ -596,15 +596,15 @@ case $target in
             [
                 if test "$enable_epoll" = "yes"; then
                     AC_MSG_RESULT([/dev/epoll])
-                    AC_DEFINE(PJ_IOQUEUE_IMP, PJ_IOQUEUE_IMP_EPOLL)
+                    AC_DEFINE([PJ_IOQUEUE_IMP], PJ_IOQUEUE_IMP_EPOLL, [XXX])
                 else
                     AC_MSG_RESULT([select()])
-                    AC_DEFINE(PJ_IOQUEUE_IMP, PJ_IOQUEUE_IMP_SELECT)
+                    AC_DEFINE([PJ_IOQUEUE_IMP], PJ_IOQUEUE_IMP_SELECT, [XXX])
                 fi
             ],
             [
                 AC_MSG_RESULT([select()])
-                AC_DEFINE(PJ_IOQUEUE_IMP, PJ_IOQUEUE_IMP_SELECT)
+                AC_DEFINE([PJ_IOQUEUE_IMP], PJ_IOQUEUE_IMP_SELECT, [XXX])
             ]
         )
         ;;
@@ -784,7 +784,7 @@ AC_ARG_WITH(external-speex,
                 ],
                 [
                     AC_MSG_RESULT(yes!!)
-                    AC_DEFINE(PJMEDIA_EXTERNAL_SPEEX_CODEC, 1)
+                    AC_DEFINE([PJMEDIA_EXTERNAL_SPEEX_CODEC], 1, [XXX])
                     ac_external_speex="1"
                 ],
                 [
@@ -810,8 +810,8 @@ AC_ARG_WITH(external-gsm,
                 ],
                 [
                     AC_MSG_RESULT(yes!!)
-                    AC_DEFINE(PJMEDIA_EXTERNAL_GSM_CODEC, 1)
-                    AC_DEFINE(PJMEDIA_EXTERNAL_GSM_GSM_H, 1)
+                    AC_DEFINE([PJMEDIA_EXTERNAL_GSM_CODEC], 1, [XXX])
+                    AC_DEFINE([PJMEDIA_EXTERNAL_GSM_GSM_H], 1, [XXX])
                     ac_external_gsm="1"
                 ],
                 [
@@ -824,8 +824,8 @@ AC_ARG_WITH(external-gsm,
                         ],
                         [
                             AC_MSG_RESULT(yes!!)
-                            AC_DEFINE(PJMEDIA_EXTERNAL_GSM_CODEC, 1)
-                            AC_DEFINE(PJMEDIA_EXTERNAL_GSM_H, 1)
+                            AC_DEFINE([PJMEDIA_EXTERNAL_GSM_CODEC], 1, [XXX])
+                            AC_DEFINE([PJMEDIA_EXTERNAL_GSM_H], 1, [XXX])
                             ac_external_gsm="1"
                         ],
                         [
@@ -1165,7 +1165,7 @@ AC_ARG_ENABLE(video,
     AS_HELP_STRING([--disable-video], [Disable video feature]),
     [
         if test "$enable_video" = "no"; then
-            #AC_DEFINE(PJMEDIA_HAS_VIDEO,0)
+            #AC_DEFINE([PJMEDIA_HAS_VIDEO], 0, [XXX])
             AC_MSG_RESULT([Video is disabled])
             enable_sdl="no"
             enable_ffmpeg="no"
@@ -1373,7 +1373,7 @@ AC_ARG_ENABLE(g711-codec,
     [
         if test "$enable_g711_codec" = "no"; then
             [ac_no_g711_codec=1]
-            AC_DEFINE(PJMEDIA_HAS_G711_CODEC,0)
+            AC_DEFINE([PJMEDIA_HAS_G711_CODEC], 0, [XXX])
             AC_MSG_RESULT([Checking if G.711 codec is disabled...yes])
         fi
     ],
@@ -1388,7 +1388,7 @@ AC_ARG_ENABLE(l16-codec,
     [
         if test "$enable_l16_codec" = "no"; then
             [ac_no_l16_codec=1]
-            AC_DEFINE(PJMEDIA_HAS_L16_CODEC,0)
+            AC_DEFINE([PJMEDIA_HAS_L16_CODEC], 0, [XXX])
             AC_MSG_RESULT([Checking if L16 codecs are disabled...yes])
         fi
     ],
@@ -1402,7 +1402,7 @@ AC_ARG_ENABLE(gsm-codec,
     [
         if test "$enable_gsm_codec" = "no"; then
             [ac_no_gsm_codec=1]
-            AC_DEFINE(PJMEDIA_HAS_GSM_CODEC,0)
+            AC_DEFINE([PJMEDIA_HAS_GSM_CODEC], 0, [XXX])
             AC_MSG_RESULT([Checking if GSM codec is disabled...yes])
         fi
     ],
@@ -1416,7 +1416,7 @@ AC_ARG_ENABLE(g722-codec,
     [
         if test "$enable_g722_codec" = "no"; then
             [ac_no_g722_codec=1]
-            AC_DEFINE(PJMEDIA_HAS_G722_CODEC,0)
+            AC_DEFINE([PJMEDIA_HAS_G722_CODEC], 0, [XXX])
             AC_MSG_RESULT([Checking if G.722 codec is disabled...yes])
         fi
     ],
@@ -1430,7 +1430,7 @@ AC_ARG_ENABLE(g7221-codec,
     [
         if test "$enable_g7221_codec" = "no"; then
             [ac_no_g7221_codec=1]
-            AC_DEFINE(PJMEDIA_HAS_G7221_CODEC,0)
+            AC_DEFINE([PJMEDIA_HAS_G7221_CODEC], 0, [XXX])
             AC_MSG_RESULT([Checking if G.722.1 codec is disabled...yes])
         fi
     ],
@@ -1444,7 +1444,7 @@ AC_ARG_ENABLE(speex-codec,
     [
         if test "$enable_speex_codec" = "no"; then
             [ac_no_speex_codec=1]
-            AC_DEFINE(PJMEDIA_HAS_SPEEX_CODEC,0)
+            AC_DEFINE([PJMEDIA_HAS_SPEEX_CODEC], 0, [XXX])
             AC_MSG_RESULT([Checking if Speex codec is disabled...yes])
         fi
     ],
@@ -1458,7 +1458,7 @@ AC_ARG_ENABLE(ilbc-codec,
     [
         if test "$enable_ilbc_codec" = "no"; then
             [ac_no_ilbc_codec=1]
-            AC_DEFINE(PJMEDIA_HAS_ILBC_CODEC,0)
+            AC_DEFINE([PJMEDIA_HAS_ILBC_CODEC], 0, [XXX])
             AC_MSG_RESULT([Checking if iLBC codec is disabled...yes])
         fi
     ],
@@ -2076,7 +2076,7 @@ AC_ARG_ENABLE(android-mediacodec,
 
                 if test "x$ac_pjmedia_has_amediacodec" = "x1"; then
                     AC_MSG_RESULT([Checking if Android AMediaCodec library is available... yes])
-                    AC_DEFINE(PJMEDIA_HAS_ANDROID_MEDIACODEC, 1)
+                    AC_DEFINE([PJMEDIA_HAS_ANDROID_MEDIACODEC], 1, [XXX])
                     ac_mediacodec_cflags="-DPJMEDIA_HAS_ANDROID_MEDIACODEC=1 -D__ANDROID_UNAVAILABLE_SYMBOLS_ARE_WEAK__ -Werror=unguarded-availability"
                 else
                     AC_MSG_RESULT([Checking if Android AMediaCodec library is available... no])
@@ -2158,8 +2158,8 @@ AC_ARG_ENABLE(darwin-ssl,
                 CFLAGS="$SAVED_CFLAGS"
                 LIBS="$SAVED_LIBS"
                     if test "x$ac_ssl_backend" = "xdarwin"; then
-                    AC_DEFINE(PJ_HAS_SSL_SOCK, 1)
-                    AC_DEFINE(PJ_SSL_SOCK_IMP, PJ_SSL_SOCK_IMP_DARWIN)
+                    AC_DEFINE([PJ_HAS_SSL_SOCK], 1, [XXX])
+                    AC_DEFINE([PJ_SSL_SOCK_IMP], PJ_SSL_SOCK_IMP_DARWIN, [XXX])
                     LIBS="$LIBS -framework Security"
                     AC_MSG_RESULT([Checking if Darwin SSL is available... yes])
                     else
@@ -2236,9 +2236,9 @@ AC_ARG_ENABLE(ssl,
 
                 if test "x$ac_ssl_backend" = "x"; then
                     # PJSIP_HAS_TLS_TRANSPORT setting follows PJ_HAS_SSL_SOCK
-                    #AC_DEFINE(PJSIP_HAS_TLS_TRANSPORT, 1)
-                    AC_DEFINE(PJ_HAS_SSL_SOCK, 1)
-                    AC_DEFINE(PJ_SSL_SOCK_IMP, PJ_SSL_SOCK_IMP_OPENSSL)
+                    #AC_DEFINE([PJSIP_HAS_TLS_TRANSPORT], 1, [XXX])
+                    AC_DEFINE([PJ_HAS_SSL_SOCK], 1, [XXX])
+                    AC_DEFINE([PJ_SSL_SOCK_IMP], PJ_SSL_SOCK_IMP_OPENSSL, [XXX])
                     ac_ssl_backend="openssl"
                 fi
             else
@@ -2272,8 +2272,8 @@ AC_ARG_ENABLE(ssl,
 
             if test "x$gnutls_h_present" = "x1" -a "x$libgnutls_present" = "x1"; then
                 AC_MSG_RESULT([GnuTLS library found, SSL support enabled])
-                AC_DEFINE(PJ_HAS_SSL_SOCK, 1)
-                AC_DEFINE(PJ_SSL_SOCK_IMP, PJ_SSL_SOCK_IMP_GNUTLS)
+                AC_DEFINE([PJ_HAS_SSL_SOCK], 1, [XXX])
+                AC_DEFINE([PJ_SSL_SOCK_IMP], PJ_SSL_SOCK_IMP_GNUTLS, [XXX])
                 ac_ssl_backend="gnutls"
             else
                 AC_MSG_RESULT([** No GnuTLS libraries found, disabling SSL support **])
@@ -2307,8 +2307,8 @@ AC_ARG_ENABLE(ssl,
 
             if test "x$mbedtls_h_present" = "x1" -a "x$libmbedtls_present" = "x1"; then
                 AC_MSG_RESULT([MbedTLS library found, SSL support enabled])
-                AC_DEFINE(PJ_HAS_SSL_SOCK, 1)
-                AC_DEFINE(PJ_SSL_SOCK_IMP, PJ_SSL_SOCK_IMP_MBEDTLS)
+                AC_DEFINE([PJ_HAS_SSL_SOCK], 1, [XXX])
+                AC_DEFINE([PJ_SSL_SOCK_IMP], PJ_SSL_SOCK_IMP_MBEDTLS, [XXX])
                 ac_ssl_backend="mbedtls"
             else
                 AC_MSG_RESULT([** No MbedTLS libraries found, disabling SSL support **])
@@ -2360,8 +2360,8 @@ AC_ARG_ENABLE(opencore_amr,
         if test "$enable_opencore_amr" = "no"; then
             [ac_no_opencore_amrnb=1]
             [ac_no_opencore_amrwb=1]
-            AC_DEFINE(PJMEDIA_HAS_OPENCORE_AMRNB_CODEC,0)
-            AC_DEFINE(PJMEDIA_HAS_OPENCORE_AMRWB_CODEC,0)
+            AC_DEFINE([PJMEDIA_HAS_OPENCORE_AMRNB_CODEC], 0, [XXX])
+            AC_DEFINE([PJMEDIA_HAS_OPENCORE_AMRWB_CODEC], 0, [XXX])
             AC_MSG_RESULT([Checking if OpenCORE AMR support is disabled... yes])
         fi
     ],
@@ -2389,10 +2389,10 @@ AC_ARG_ENABLE(opencore_amr,
 
         if test "x$opencore_amrnb_h_present" = "x1" -a "x$opencore_amrnb_present" = "x1"; then
             AC_MSG_RESULT([OpenCORE AMR-NB library found, AMR-NB support enabled])
-            AC_DEFINE(PJMEDIA_HAS_OPENCORE_AMRNB_CODEC,1)
+            AC_DEFINE([PJMEDIA_HAS_OPENCORE_AMRNB_CODEC], 1, [XXX])
         else
             [ac_no_opencore_amrnb=1]
-            AC_DEFINE(PJMEDIA_HAS_OPENCORE_AMRNB_CODEC,0)
+            AC_DEFINE([PJMEDIA_HAS_OPENCORE_AMRNB_CODEC], 0, [XXX])
         fi
 
         AC_SUBST(opencore_amrwb_enc_h_present)
@@ -2410,10 +2410,10 @@ AC_ARG_ENABLE(opencore_amr,
 
         if test "x$opencore_amrwb_enc_h_present" = "x1" -a "x$opencore_amrwb_dec_h_present" = "x1" -a "x$opencore_amrwb_enc_present" = "x1" -a "x$opencore_amrwb_dec_present" = "x1"; then
                 AC_MSG_RESULT([OpenCORE AMR-WB library found, AMR-WB support enabled])
-                AC_DEFINE(PJMEDIA_HAS_OPENCORE_AMRWB_CODEC,1)
+                AC_DEFINE([PJMEDIA_HAS_OPENCORE_AMRWB_CODEC], 1, [XXX])
         else
             [ac_no_opencore_amrwb=1]
-            AC_DEFINE(PJMEDIA_HAS_OPENCORE_AMRWB_CODEC,0)
+            AC_DEFINE([PJMEDIA_HAS_OPENCORE_AMRWB_CODEC], 0, [XXX])
         fi
     ]
 )
@@ -2437,7 +2437,7 @@ AC_ARG_ENABLE(silk,
     [
         if test "$enable_silk" = "no"; then
             [ac_no_silk=1]
-            AC_DEFINE(PJMEDIA_HAS_SILK_CODEC,0)
+            AC_DEFINE([PJMEDIA_HAS_SILK_CODEC], 0, [XXX])
             AC_MSG_RESULT([Checking if SILK support is disabled... yes])
         fi
     ],
@@ -2458,10 +2458,10 @@ AC_ARG_ENABLE(silk,
 
         if test "x$silk_h_present" = "x1" -a "x$silk_present" = "x1"; then
             AC_MSG_RESULT([SILK library found, SILK support enabled])
-            AC_DEFINE(PJMEDIA_HAS_SILK_CODEC,1)
+            AC_DEFINE([PJMEDIA_HAS_SILK_CODEC], 1, [XXX])
         else
             [ac_no_silk=1]
-            AC_DEFINE(PJMEDIA_HAS_SILK_CODEC,0)
+            AC_DEFINE([PJMEDIA_HAS_SILK_CODEC], 0, [XXX])
         fi
     ]
 )
@@ -2485,7 +2485,7 @@ AC_ARG_ENABLE(opus,
     [
         if test "$enable_opus" = "no"; then
             [ac_no_opus=1]
-            AC_DEFINE(PJMEDIA_HAS_OPUS_CODEC,0)
+            AC_DEFINE([PJMEDIA_HAS_OPUS_CODEC], 0, [XXX])
             AC_MSG_RESULT([Checking if OPUS support is disabled... yes])
         fi
     ],
@@ -2505,11 +2505,11 @@ AC_ARG_ENABLE(opus,
 
         if test "x$opus_h_present" = "x1" -a "x$opus_present" = "x1"; then
             AC_MSG_RESULT([OPUS library found, OPUS support enabled])
-            AC_DEFINE(PJMEDIA_HAS_OPUS_CODEC,1)
+            AC_DEFINE([PJMEDIA_HAS_OPUS_CODEC], 1, [XXX])
         else
             [ac_no_opus=1]
             AC_MSG_RESULT([OPUS library not found, OPUS support disabled])
-            AC_DEFINE(PJMEDIA_HAS_OPUS_CODEC,0)
+            AC_DEFINE([PJMEDIA_HAS_OPUS_CODEC], 0, [XXX])
         fi
     ]
 )
@@ -2533,7 +2533,7 @@ AC_ARG_ENABLE(bcg729,
     [
         if test "$enable_bcg729" = "no"; then
             [ac_no_bcg729=1]
-            AC_DEFINE(PJMEDIA_HAS_BCG729,0)
+            AC_DEFINE([PJMEDIA_HAS_BCG729], 0, [XXX])
             AC_MSG_RESULT([Checking if bcg729 is disabled... yes])
         fi
     ],
@@ -2568,12 +2568,12 @@ AC_ARG_ENABLE(bcg729,
                     [initBcg729EncoderChannel(0);])
             ],
             [
-                AC_DEFINE(PJMEDIA_HAS_BCG729,1)
+                AC_DEFINE([PJMEDIA_HAS_BCG729], 1, [XXX])
                 AC_MSG_RESULT(yes)
             ],
             [
                 [ac_no_bcg729=1]
-                AC_DEFINE(PJMEDIA_HAS_BCG729,0)
+                AC_DEFINE([PJMEDIA_HAS_BCG729], 0, [XXX])
                 LIBS="$SAVED_LIBS"
                 LDFLAGS="$SAVED_LDFLAGS"
                 CFLAGS="$SAVED_CFLAGS"
@@ -2603,7 +2603,7 @@ AC_ARG_ENABLE(lyra,
     [
         if test "$enable_lyra" = "no"; then
             [ac_no_lyra_codec=1]
-            AC_DEFINE(PJMEDIA_HAS_LYRA_CODEC,0)
+            AC_DEFINE([PJMEDIA_HAS_LYRA_CODEC], 0, [XXX])
             AC_MSG_RESULT([Checking if lyra is disabled... yes])
         fi
     ],
@@ -2643,7 +2643,7 @@ AC_ARG_ENABLE(lyra,
             ],
             [
                 [ac_lyra_model_path="$LYRA_PREFIX/model_coeffs"]
-                AC_DEFINE(PJMEDIA_HAS_LYRA_CODEC,1)
+                AC_DEFINE([PJMEDIA_HAS_LYRA_CODEC], 1, [XXX])
                 dnl # use single quoted preprocessor definition
                 LYRA_CPPFLAGS="'-DGLOG_DEPRECATED=__attribute__((deprecated))' '-DGLOG_EXPORT=__attribute__((visibility(\"default\")))' '-DGLOG_NO_EXPORT=__attribute__((visibility(\"default\")))'"
                 CXXFLAGS="$LYRA_CPPFLAGS $CXXFLAGS"
@@ -2683,7 +2683,7 @@ AC_ARG_ENABLE(libyuv,
     [
         if test "$enable_libyuv" = "no"; then
             [ac_no_yuv=1]
-            AC_DEFINE(PJMEDIA_HAS_LIBYUV,0)
+            AC_DEFINE([PJMEDIA_HAS_LIBYUV], 0, [XXX])
             AC_MSG_RESULT([Checking if libyuv is disabled...yes])
         fi
     ],
@@ -2717,7 +2717,7 @@ AC_ARG_ENABLE(libwebrtc,
     [
         if test "$enable_libwebrtc" = "no"; then
             [ac_no_webrtc=1]
-            AC_DEFINE(PJMEDIA_HAS_LIBWEBRTC,0)
+            AC_DEFINE([PJMEDIA_HAS_LIBWEBRTC], 0, [XXX])
             AC_MSG_RESULT([Checking if libwebrtc is disabled...yes])
         fi
     ],
@@ -2838,7 +2838,7 @@ AC_ARG_ENABLE(libwebrtc_aec3,
                     AC_MSG_RESULT(no)
                     CXXFLAGS="$SAVED_CXXFLAGS"
                     ac_no_webrtc_aec3=1
-                    AC_DEFINE(PJMEDIA_HAS_LIBWEBRTC_AEC3,0)
+                    AC_DEFINE([PJMEDIA_HAS_LIBWEBRTC_AEC3], 0, [XXX])
                 ]
             )
             AC_LANG_POP([C++])
@@ -2930,13 +2930,13 @@ AC_ARG_ENABLE(libwebrtc_aec3,
             ac_webrtc_aec3_cflags+=" -DWEBRTC_APM_DEBUG_DUMP=0 -DWEBRTC_POSIX=1"
         else
             ac_no_webrtc_aec3=1
-            AC_DEFINE(PJMEDIA_HAS_LIBWEBRTC_AEC3,0)
+            AC_DEFINE([PJMEDIA_HAS_LIBWEBRTC_AEC3], 0, [XXX])
             AC_MSG_RESULT([Checking if libwebrtc-aec3 is enabled...no])
         fi
     ],
     [
         ac_no_webrtc_aec3=1
-        AC_DEFINE(PJMEDIA_HAS_LIBWEBRTC_AEC3,0)
+        AC_DEFINE([PJMEDIA_HAS_LIBWEBRTC_AEC3], 0, [XXX])
         AC_MSG_RESULT([Checking if libwebrtc-aec3 is enabled...no])
     ]
 )
@@ -2953,11 +2953,11 @@ dnl # PJ_FD_SETSIZE
 AC_MSG_CHECKING([if select() needs correct nfds])
 case $target in
     *rtems*)
-        AC_DEFINE(PJ_SELECT_NEEDS_NFDS,1)
+        AC_DEFINE([PJ_SELECT_NEEDS_NFDS], 1, [XXX])
         AC_MSG_RESULT(yes)
     ;;
     *)
-        AC_DEFINE(PJ_SELECT_NEEDS_NFDS,0)
+        AC_DEFINE([PJ_SELECT_NEEDS_NFDS], 0, [XXX])
         AC_MSG_RESULT([no (default)])
         AC_MSG_RESULT([** Decided that select() doesn't need correct nfds (please check)])
     ;;
@@ -2969,11 +2969,11 @@ dnl # thread's stack size.
 AC_MSG_CHECKING([if pj_thread_create() should enforce stack size])
 case $target in
     *rtems*)
-        AC_DEFINE(PJ_THREAD_SET_STACK_SIZE,1)
+        AC_DEFINE([PJ_THREAD_SET_STACK_SIZE], 1, [XXX])
         AC_MSG_RESULT(yes)
     ;;
     *)
-        AC_DEFINE(PJ_THREAD_SET_STACK_SIZE,0)
+        AC_DEFINE([PJ_THREAD_SET_STACK_SIZE], 0, [XXX])
         AC_MSG_RESULT([no (default)])
     ;;
 esac
@@ -2983,11 +2983,11 @@ dnl # the pool. Default is zero, to let OS allocate thread's stack.
 AC_MSG_CHECKING([if pj_thread_create() should allocate stack])
 case $target in
     *rtems*)
-        AC_DEFINE(PJ_THREAD_ALLOCATE_STACK,1)
+        AC_DEFINE([PJ_THREAD_ALLOCATE_STACK], 1, [XXX])
         AC_MSG_RESULT(yes)
     ;;
     *)
-        AC_DEFINE(PJ_THREAD_ALLOCATE_STACK,0)
+        AC_DEFINE([PJ_THREAD_ALLOCATE_STACK], 0, [XXX])
         AC_MSG_RESULT([no (default)])
     ;;
 esac
@@ -2996,10 +2996,10 @@ dnl # This value specifies the value set in errno by the OS when a non-blocking
 dnl # socket recv() can not return immediate data.
 case $target in
     *mingw* | *cygw* | *win32* | *w32* )
-        AC_DEFINE(PJ_BLOCKING_ERROR_VAL,WSAEWOULDBLOCK)
+        AC_DEFINE([PJ_BLOCKING_ERROR_VAL], WSAEWOULDBLOCK, [XXX])
     ;;
     *)
-        AC_DEFINE(PJ_BLOCKING_ERROR_VAL,EAGAIN)
+        AC_DEFINE([PJ_BLOCKING_ERROR_VAL], EAGAIN, [XXX])
         AC_MSG_RESULT([** Setting non-blocking recv() retval to EAGAIN (please check)])
     ;;
 esac
@@ -3008,10 +3008,10 @@ dnl # This value specifies the value set in errno by the OS when a non-blocking
 dnl # socket connect() can not get connected immediately.
 case $target in
     *mingw* | *cygw* | *win32* | *w32* )
-        AC_DEFINE(PJ_BLOCKING_CONNECT_ERROR_VAL,WSAEWOULDBLOCK)
+        AC_DEFINE([PJ_BLOCKING_CONNECT_ERROR_VAL], WSAEWOULDBLOCK, [XXX])
     ;;
     *)
-        AC_DEFINE(PJ_BLOCKING_CONNECT_ERROR_VAL,EINPROGRESS)
+        AC_DEFINE([PJ_BLOCKING_CONNECT_ERROR_VAL], EINPROGRESS, [XXX])
         AC_MSG_RESULT([** Setting non-blocking connect() retval to EINPROGRESS (please check)])
     ;;
 esac
@@ -3024,9 +3024,9 @@ dnl
 
 case $target in
     *linux* | *darwin* | *bsd*)
-        AC_CHECK_HEADER(pthread_np.h,[AC_DEFINE(PJ_HAS_PTHREAD_NP_H,1)])
-        AC_CHECK_FUNC(pthread_setname_np,[AC_DEFINE(PJ_HAS_PTHREAD_SETNAME_NP,1)])
-        AC_CHECK_FUNC(pthread_set_name_np,[AC_DEFINE(PJ_HAS_PTHREAD_SET_NAME_NP,1)])
+        AC_CHECK_HEADER(pthread_np.h,[AC_DEFINE([PJ_HAS_PTHREAD_NP_H], 1, [XXX])])
+        AC_CHECK_FUNC(pthread_setname_np,[AC_DEFINE([PJ_HAS_PTHREAD_SETNAME_NP], 1, [XXX])])
+        AC_CHECK_FUNC(pthread_set_name_np,[AC_DEFINE([PJ_HAS_PTHREAD_SET_NAME_NP], 1, [XXX])])
     ;;
 esac
 
