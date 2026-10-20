@@ -98,3 +98,7 @@ getversion.mak
 configure.out
 */Platforms/iOS/pjsua2/*
 */Platforms/iOS/lib/*
+/config.guess
+/config.sub
+/configure
+*~
